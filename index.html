@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jogo da Respiração Consciente</title>
+  <!-- Importando GSAP via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
+  <style>
+    /* Estilos básicos para a página */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: #87CEFA; /* Céu azul claro */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, sans-serif;
+    }
+    
+    /* Container do jogo */
+    #game-container {
+      position: relative;
+      width: 300px;
+      height: 500px;
+      border: 2px solid #fff;
+      border-radius: 10px;
+      background-color: #87CEFA;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      margin-bottom: 20px;
+    }
+    
+    /* A bolinha (representa o "balão") */
+    #ball {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background-color: red;
+      border-radius: 50%;
+      left: calc(50% - 25px);
+      bottom: 20px; /* Posição inicial (base) */
+    }
+    
+    /* Texto de instrução (fase atual da respiração) */
+    #instructionText {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+    
+    /* Controles para ajuste dos tempos e seleção de modos */
+    #controls {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 15px;
+      border-radius: 10px;
+      width: 300px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    }
+    
+    .control-group {
+      margin: 10px 0;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .control-group label {
+      margin-bottom: 5px;
+    }
+    
+    .control-group input[type="range"],
+    .control-group select {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="instructionText">Inspire</div>
+    <div id="ball"></div>
+  </div>
+  
+  <div id="controls">
+    <div class="control-group">
+      <label for="modeSelect">Modo Pré-definido:</label>
+      <select id="modeSelect">
+         <option value="custom">Personalizado</option>
+         <option value="standard">Padrão (4 - 2 - 6)</option>
+         <option value="relax">Relax (5 - 3 - 7)</option>
+         <option value="focus">Foco (3 - 1 - 5)</option>
+      </select>
+    </div>
+    
+    <div class="control-group">
+      <label for="inspire">Inspire (segundos): <span id="inspireValue">4</span></label>
+      <input type="range" id="inspire" min="1" max="10" step="0.1" value="4">
+    </div>
+    <div class="control-group">
+      <label for="hold">Segure (segundos): <span id="holdValue">2</span></label>
+      <input type="range" id="hold" min="0" max="10" step="0.1" value="2">
+    </div>
+    <div class="control-group">
+      <label for="expire">Expire (segundos): <span id="expireValue">6</span></label>
+      <input type="range" id="expire" min="1" max="10" step="0.1" value="6">
+    </div>
+  </div>
+  
+  <script>
+    // Seleção dos elementos
+    const ball = document.getElementById('ball');
+    const gameContainer = document.getElementById('game-container');
+    const instructionText = document.getElementById('instructionText');
+    
+    const inspireSlider = document.getElementById('inspire');
+    const holdSlider = document.getElementById('hold');
+    const expireSlider = document.getElementById('expire');
+    
+    const inspireValueSpan = document.getElementById('inspireValue');
+    const holdValueSpan = document.getElementById('holdValue');
+    const expireValueSpan = document.getElementById('expireValue');
+    
+    const modeSelect = document.getElementById('modeSelect');
+
+    // Definindo as posições verticais para a bolinha
+    const bottomPos = 20; // posição inferior (base)
+    let topPos = gameContainer.clientHeight - ball.clientHeight - 20; // posição superior
+
+    let tl; // variável para o timeline GSAP
+
+    // Função para criar o timeline com os tempos atuais
+    function createTimeline() {
+      // Se já existir um timeline, o encerra antes de criar um novo
+      if (tl) tl.kill();
+      
+      // Lê os tempos definidos (em segundos)
+      const inspireDuration = parseFloat(inspireSlider.value);
+      const holdDuration = parseFloat(holdSlider.value);
+      const expireDuration = parseFloat(expireSlider.value);
+      
+      // Cria um novo timeline que se repete indefinidamente
+      tl = gsap.timeline({ repeat: -1 });
+      
+      // Fase 1: Inspire
+      tl.call(() => {
+        instructionText.textContent = "Inspire";
+      });
+      tl.to(ball, { 
+        duration: inspireDuration, 
+        bottom: topPos, 
+        ease: "power2.inOut",
+        scale: 1.1 
+      });
+      
+      // Fase 2: Segure (mantém a bolinha no topo com um leve efeito pulsante)
+      tl.call(() => {
+        instructionText.textContent = "Segure";
+      });
+      tl.to(ball, { 
+        duration: holdDuration / 2, 
+        scale: 1.2, 
+        ease: "power1.inOut" 
+      });
+      tl.to(ball, { 
+        duration: holdDuration / 2, 
+        scale: 1.1, 
+        ease: "power1.inOut" 
+      });
+      
+      // Fase 3: Expire
+      tl.call(() => {
+        instructionText.textContent = "Expire";
+      });
+      tl.to(ball, { 
+        duration: expireDuration, 
+        bottom: bottomPos, 
+        ease: "power2.inOut", 
+        scale: 1 
+      });
+    }
+
+    // Função para atualizar os valores exibidos dos sliders
+    function updateSliderDisplays() {
+      inspireValueSpan.textContent = inspireSlider.value;
+      holdValueSpan.textContent = holdSlider.value;
+      expireValueSpan.textContent = expireSlider.value;
+    }
+    
+    // Função para aplicar modos pré-definidos
+    function applyMode(mode) {
+      switch(mode) {
+        case "standard":
+          inspireSlider.value = 4;
+          holdSlider.value = 2;
+          expireSlider.value = 6;
+          break;
+        case "relax":
+          inspireSlider.value = 5;
+          holdSlider.value = 3;
+          expireSlider.value = 7;
+          break;
+        case "focus":
+          inspireSlider.value = 3;
+          holdSlider.value = 1;
+          expireSlider.value = 5;
+          break;
+        case "custom":
+        default:
+          // Mantém os valores atuais
+          break;
+      }
+      updateSliderDisplays();
+      createTimeline();
+    }
+    
+    // Atualiza o timeline sempre que um slider é modificado
+    inspireSlider.addEventListener('input', () => {
+      updateSliderDisplays();
+      // Se estiver em modo personalizado, recria o timeline
+      if (modeSelect.value === "custom") createTimeline();
+    });
+    holdSlider.addEventListener('input', () => {
+      updateSliderDisplays();
+      if (modeSelect.value === "custom") createTimeline();
+    });
+    expireSlider.addEventListener('input', () => {
+      updateSliderDisplays();
+      if (modeSelect.value === "custom") createTimeline();
+    });
+    
+    // Atualiza os valores e o timeline ao mudar o modo pré-definido
+    modeSelect.addEventListener('change', () => {
+      applyMode(modeSelect.value);
+    });
+    
+    // Atualiza a posição superior se a janela for redimensionada
+    window.addEventListener('resize', () => {
+      topPos = gameContainer.clientHeight - ball.clientHeight - 20;
+      createTimeline();
+    });
+    
+    // Inicializa o estado da bolinha e do timeline quando a página carrega
+    window.addEventListener('load', () => {
+      // Posição inicial da bolinha
+      ball.style.bottom = bottomPos + "px";
+      updateSliderDisplays();
+      createTimeline();
+    });
+  </script>
+</body>
+</html>
